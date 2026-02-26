@@ -1,4 +1,12 @@
-library(dplyr)
+
+
+#==============================================================================#
+
+# Zero One Inflated Beta Data Prep
+
+#==============================================================================#  
+
+# Librarieslibrary(dplyr)
 library(tidyr)
 library(lubridate)
 
@@ -12,6 +20,7 @@ sites <- c("Cottonwood Ranch", "Dyer", "Kearney Broadfoot South", "Leaman",
 
 # filtering nest sites and technique
 nest_data <- nest %>%
+  dplyr::filter(lubridate::year(Visit.Date) >= 2010) %>% 
   dplyr::filter(Site %in% sites) %>%  # Filtering to selected sites
   dplyr::mutate(
     Visit.Date = as.Date(Visit.Date), # Modifying dates to be date format
@@ -52,7 +61,7 @@ beta_data <- nest_data %>%
     has_success = final_status == "Fledged"
   ) %>%
   dplyr::filter(has_success) %>%
-  dplyr::mutate(proportion = max_lt21_pp28 / max_15day) |> 
+  dplyr::mutate(proportion = max_lt21_pp28 / max_15day) %>% 
   dplyr::mutate(prop_flag = case_when(
     proportion > 1 ~ "Above 1",
     proportion < 0 ~ "Negative",
@@ -64,6 +73,100 @@ beta_data <- nest_data %>%
     proportion = ifelse(is.na(proportion) | is.infinite(proportion), 0, proportion)
   ) %>%
   dplyr::select(Nest, Species, Site, technique, first_date, last_date, julian_day, exposure, max_chicks, proportion, prop_flag)
+
+
+#==============================================================================#
+# Adding in treatment information
+
+library(tibble)
+
+site_mgmt <- tribble(
+  ~Site,                  ~Year, ~exterior_fence, ~entry_fence, ~interior_fence, ~lights,
+  "Cottonwood Ranch",      2020,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2021,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2022,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2023,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2024,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2025,  0,               1,            0,               0,
+  
+  "Dyer",                  2020,  0,               1,            0,               0,
+  "Dyer",                  2021,  0,               1,            0,               0,
+  "Dyer",                  2022,  0,               1,            0,               0,
+  "Dyer",                  2023,  0,               1,            0,               0,
+  "Dyer",                  2024,  0,               1,            0,               0,
+  "Dyer",                  2025,  0,               1,            0,               0,
+  
+  "Kearney Broadfoot South",2020,  0,               1,            1,               0,
+  "Kearney Broadfoot South",2021,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2022,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2023,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2024,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2025,  0,               1,            1,               1,
+  
+  "Leaman",                2020,  0,               1,            0,               0,
+  "Leaman",                2021,  0,               1,            0,               1,
+  "Leaman",                2022,  0,               1,            0,               1,
+  "Leaman",                2023,  0,               1,            0,               1,
+  "Leaman",                2024,  0,               1,            0,               1,
+  "Leaman",                2025,  0,               1,            0,               1,
+  
+  "OSG Lexington",         2020,  0,               1,            0,               0,
+  "OSG Lexington",         2021,  0,               1,            0,               0,
+  "OSG Lexington",         2022,  0,               1,            0,               0,
+  "OSG Lexington",         2023,  0,               1,            0,               0,
+  "OSG Lexington",         2024,  0,               1,            0,               0,
+  "OSG Lexington",         2025,  0,               1,            0,               0,
+  
+  "Newark East",            2020,  0,               1,            0,               0,
+  "Newark East",            2021,  0,               1,            0,               0,
+  "Newark East",            2022,  0,               1,            0,               0,
+  "Newark East",            2023,  0,               1,            0,               0,
+  "Newark East",            2024,  0,               1,            0,               0,
+  "Newark East",            2025,  0,               1,            0,               0,
+  
+  "Newark West",            2020,  1,               1,            0,               1,
+  "Newark West",            2021,  1,               1,            0,               1,
+  "Newark West",            2022,  1,               1,            0,               1,
+  "Newark West",            2023,  1,               1,            0,               1,
+  "Newark West",            2024,  1,               1,            0,               1,
+  "Newark West",            2025,  1,               1,            0,               0,
+  
+  "NPPD Lexington",         2020,  0,               1,            0,               0,
+  "NPPD Lexington",         2021,  0,               1,            0,               0,
+  "NPPD Lexington",         2022,  0,               1,            0,               0,
+  "NPPD Lexington",         2023,  0,               1,            0,               0,
+  "NPPD Lexington",         2024,  0,               1,            0,               0,
+  "NPPD Lexington",         2025,  0,               1,            0,               0,
+  
+  "Follmer",                2020,  0,               0,            0,               0,
+  "Follmer",                2021,  0,               0,            0,               0,
+  "Follmer",                2022,  0,               0,            0,               0,
+  "Follmer",                2023,  0,               0,            0,               0,
+  "Follmer",                2024,  0,               0,            0,               0,
+  "Follmer",                2025,  0,               1,            0,               0,
+  
+  "Blue Hole",              2020,  0,               1,            1,               1,
+  "Blue Hole",              2021,  0,               1,            0,               0,
+  "Blue Hole",              2022,  0,               0,            0,               0,
+  "Blue Hole",              2023,  0,               0,            0,               0,
+  "Blue Hole",              2024,  0,               0,            0,               0,
+  "Blue Hole",              2025,  0,               0,            0,               0
+)
+
+
+beta_data <- beta_data %>%
+  dplyr::mutate(
+    Year = lubridate::year(first_date)
+  ) %>%
+  dplyr::left_join(site_mgmt, by = c("Site", "Year")) %>%
+  dplyr::mutate(
+    exterior_fence = ifelse(is.na(exterior_fence), 0, exterior_fence),
+    entry_fence    = ifelse(is.na(entry_fence), 0, entry_fence),
+    interior_fence = ifelse(is.na(interior_fence), 0, interior_fence),
+    lights         = ifelse(is.na(lights), 0, lights)
+  ) %>%
+  dplyr::select(-Year)
+  
 
 # Save dataset
 write.csv(beta_data, "data/zoib/zoib_data.csv", row.names = FALSE)

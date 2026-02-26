@@ -23,6 +23,7 @@ sites <- c(
 
 # Filter nest information
 nest_data <- nest %>%
+  dplyr::filter(lubridate::year(Visit.Date) >= 2010) %>% 
   dplyr::filter(Site %in% sites) %>%  # Filtering to selected sites
   dplyr::mutate(
     Visit.Date = as.Date(Visit.Date), # Modifying dates to be date format
@@ -32,6 +33,86 @@ nest_data <- nest %>%
       TRUE ~ "outside"                # Pre-2012 nests default to outside
     )
   )
+
+#==============================================================================#
+# Adding in treatment information
+
+library(tibble)
+
+site_mgmt <- tribble(
+  ~Site,                  ~Year, ~exterior_fence, ~entry_fence, ~interior_fence, ~lights,
+  "Cottonwood Ranch",      2020,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2021,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2022,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2023,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2024,  0,               1,            0,               0,
+  "Cottonwood Ranch",      2025,  0,               1,            0,               0,
+  
+  "Dyer",                  2020,  0,               1,            0,               0,
+  "Dyer",                  2021,  0,               1,            0,               0,
+  "Dyer",                  2022,  0,               1,            0,               0,
+  "Dyer",                  2023,  0,               1,            0,               0,
+  "Dyer",                  2024,  0,               1,            0,               0,
+  "Dyer",                  2025,  0,               1,            0,               0,
+  
+  "Kearney Broadfoot South",2020,  0,               1,            1,               0,
+  "Kearney Broadfoot South",2021,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2022,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2023,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2024,  0,               1,            1,               1,
+  "Kearney Broadfoot South",2025,  0,               1,            1,               1,
+  
+  "Leaman",                2020,  0,               1,            0,               0,
+  "Leaman",                2021,  0,               1,            0,               1,
+  "Leaman",                2022,  0,               1,            0,               1,
+  "Leaman",                2023,  0,               1,            0,               1,
+  "Leaman",                2024,  0,               1,            0,               1,
+  "Leaman",                2025,  0,               1,            0,               1,
+  
+  "OSG Lexington",         2020,  0,               1,            0,               0,
+  "OSG Lexington",         2021,  0,               1,            0,               0,
+  "OSG Lexington",         2022,  0,               1,            0,               0,
+  "OSG Lexington",         2023,  0,               1,            0,               0,
+  "OSG Lexington",         2024,  0,               1,            0,               0,
+  "OSG Lexington",         2025,  0,               1,            0,               0,
+  
+  "Newark East",            2020,  0,               1,            0,               0,
+  "Newark East",            2021,  0,               1,            0,               0,
+  "Newark East",            2022,  0,               1,            0,               0,
+  "Newark East",            2023,  0,               1,            0,               0,
+  "Newark East",            2024,  0,               1,            0,               0,
+  "Newark East",            2025,  0,               1,            0,               0,
+  
+  "Newark West",            2020,  1,               1,            0,               1,
+  "Newark West",            2021,  1,               1,            0,               1,
+  "Newark West",            2022,  1,               1,            0,               1,
+  "Newark West",            2023,  1,               1,            0,               1,
+  "Newark West",            2024,  1,               1,            0,               1,
+  "Newark West",            2025,  1,               1,            0,               0,
+  
+  "NPPD Lexington",         2020,  0,               1,            0,               0,
+  "NPPD Lexington",         2021,  0,               1,            0,               0,
+  "NPPD Lexington",         2022,  0,               1,            0,               0,
+  "NPPD Lexington",         2023,  0,               1,            0,               0,
+  "NPPD Lexington",         2024,  0,               1,            0,               0,
+  "NPPD Lexington",         2025,  0,               1,            0,               0,
+  
+  "Follmer",                2020,  0,               0,            0,               0,
+  "Follmer",                2021,  0,               0,            0,               0,
+  "Follmer",                2022,  0,               0,            0,               0,
+  "Follmer",                2023,  0,               0,            0,               0,
+  "Follmer",                2024,  0,               0,            0,               0,
+  "Follmer",                2025,  0,               1,            0,               0,
+  
+  "Blue Hole",              2020,  0,               1,            1,               1,
+  "Blue Hole",              2021,  0,               1,            0,               0,
+  "Blue Hole",              2022,  0,               0,            0,               0,
+  "Blue Hole",              2023,  0,               0,            0,               0,
+  "Blue Hole",              2024,  0,               0,            0,               0,
+  "Blue Hole",              2025,  0,               0,            0,               0
+)
+
+
 
 #==============================================================================#
 # Nests
@@ -81,10 +162,11 @@ nest_stage_data <- nest_fates %>%
   ) %>%
   dplyr::ungroup()
 
-# Create one-hot encoding for nests
+# Create one-hot encoding for nests + join site-year management
 nest_final <- nest_stage_data %>%
   dplyr::mutate(
     julian_day = lubridate::yday(Visit.Date),
+    Year = lubridate::year(Visit.Date),
     s = ifelse(outcome == "hatch", 1, 0),
     p = ifelse(outcome == "predation", 1, 0),
     a = ifelse(outcome == "abandoned", 1, 0),
@@ -92,7 +174,18 @@ nest_final <- nest_stage_data %>%
     f = ifelse(outcome == "flooded", 1, 0),
     u = ifelse(outcome == "unknown", 1, 0)
   ) %>%
-  dplyr::select(Nest, Species, Site, technique, Visit.Date, julian_day, exposure, s, p, a, w, f, u)
+  dplyr::left_join(site_mgmt, by = c("Site", "Year")) %>%
+  dplyr::mutate(
+    dplyr::across(
+      c(exterior_fence, entry_fence, interior_fence, lights),
+      ~ tidyr::replace_na(.x, 0)
+    )
+  ) %>%
+  dplyr::select(
+    Nest, Species, Site, technique, Visit.Date, julian_day, exposure,
+    exterior_fence, entry_fence, interior_fence, lights,
+    s, p, a, w, f, u
+  )
 
 
 #==============================================================================#
@@ -128,10 +221,11 @@ chick_data <- nest_fates %>%
   ) %>%
   dplyr::ungroup()
 
-# Create one-hot encoding for chicks
+# Create one-hot encoding for chicks + join site-year management
 chick_final <- chick_data %>%
   dplyr::mutate(
     julian_day = lubridate::yday(Visit.Date),
+    Year = lubridate::year(Visit.Date),
     s = ifelse(outcome == "success", 1, 0),
     p = ifelse(outcome == "predation", 1, 0),
     a = ifelse(outcome == "abandoned", 1, 0),
@@ -139,7 +233,21 @@ chick_final <- chick_data %>%
     f = ifelse(outcome == "flooded", 1, 0),
     u = ifelse(outcome == "unknown", 1, 0)
   ) %>%
-  dplyr::select(Nest, Species, Site, technique, Visit.Date, julian_day, exposure, s, p, a, w, f, u)
+  dplyr::left_join(site_mgmt, by = c("Site", "Year")) %>%
+  dplyr::mutate(
+    dplyr::across(
+      c(exterior_fence, entry_fence, interior_fence, lights),
+      ~ tidyr::replace_na(.x, 0)
+    )
+  ) %>%
+  dplyr::select(
+    Nest, Species, Site, technique, Visit.Date, julian_day, exposure,
+    exterior_fence, entry_fence, interior_fence, lights,
+    s, p, a, w, f, u
+  )
+
+
+
 
 # Save datasets
 write.csv(nest_final, "data/multinomial/nest_exposure_data.csv", row.names = FALSE)
