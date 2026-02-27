@@ -1,0 +1,200 @@
+---
+title: "R Markdown Cheatsheet: Headers, Tabsets, Code Folding, Themes"
+author: "Josh Carrell"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: false
+    theme: flatly
+    code_folding: hide
+    df_print: paged
+---
+
+
+# What this file shows
+
+This R Markdown document is a practical reference for:
+
+- **Header sizes** using `#`, `##`, `###`, etc.
+- **Tabsets** (tabs in HTML output)
+- **Code folding** (hide/show code chunks)
+- **Themes** (Bootstrap themes for HTML)
+
+> Note: Tabsets + themes are primarily an **HTML feature**. If you knit to PDF/Word, tabsets won’t behave like tabs.
+
+---
+
+# Header sizes with `#`
+
+Headers control both **visual size** *and* the **document outline** (Table of Contents).
+
+# Level 1 header (`#`)
+Use for major sections.
+
+## Level 2 header (`##`)
+Use for subsections.
+
+### Level 3 header (`###`)
+Use for sub-subsections.
+
+#### Level 4 header (`####`)
+Use sparingly; TOC depth often stops before this.
+
+Tip: Your YAML controls TOC depth:
+- `toc_depth: 2` shows down to `##`
+- `toc_depth: 3` shows down to `###`
+
+---
+
+# Tabsets (HTML tabs)
+
+Tabsets let you create tabs using headings. You enable a tabset by adding the attribute:
+
+`{.tabset}`
+
+## Tabset example {.tabset}
+
+### Overview
+This is the first tab’s content.
+
+### Details
+This is the second tab’s content.
+
+### Notes
+This is the third tab’s content.
+
+### Code example
+You can include code chunks inside a tab too:
+
+```{r}
+summary(mtcars$mpg)
+```
+
+
+Nested tabsets (allowed, but don’t overdo it) {.tabset}
+Outer tab A
+
+Content in outer tab A.
+
+Outer tab B
+Inner tabset {.tabset}
+Inner tab 1
+
+Inner tab 1 content.
+
+Inner tab 2
+
+Inner tab 2 content.
+
+Code folding
+
+Code folding adds a small toggle so people can hide/show your R code in the rendered HTML.
+
+Turn on folding for the whole document (YAML)
+
+In the YAML header:
+
+code_folding: hide → code chunks start collapsed
+
+code_folding: show → code chunks start expanded
+
+Example (already set in this document):
+
+output:
+  html_document:
+    code_folding: hide
+Control visibility per chunk
+
+You can still control what appears using chunk options:
+
+echo = TRUE/FALSE → show/hide code
+
+include = TRUE/FALSE → include chunk output in the document or not
+
+eval = TRUE/FALSE → run code or not
+
+Show code and output
+mean(mtcars$mpg)
+Hide code, show output (echo=FALSE)
+mean(mtcars$mpg)
+Show code, hide output (results='hide')
+mean(mtcars$mpg)
+Hide everything but still run (include=FALSE)
+x <- rnorm(1000)
+Themes (HTML)
+
+Themes control the overall look: fonts, colors, spacing, tables, and heading styles.
+
+In R Markdown HTML output, theme: uses Bootstrap themes (via rmarkdown).
+
+Setting a theme
+
+In YAML:
+
+output:
+  html_document:
+    theme: flatly
+
+You can also set theme: null if you want to supply your own CSS.
+
+Common built-in themes you can use
+
+You can usually use these theme names directly:
+
+default
+
+cerulean
+
+journal
+
+flatly
+
+readable
+
+spacelab
+
+united
+
+cosmo
+
+lumen
+
+paper
+
+sandstone
+
+simplex
+
+yeti
+
+Example switch:
+
+output:
+  html_document:
+    theme: yeti
+When to use CSS instead (or in addition)
+
+If you want more control than a theme provides (e.g., custom fonts, tighter margins, branded colors), add a CSS file:
+
+output:
+  html_document:
+    theme: flatly
+    css: "styles.css"
+
+And then create styles.css in the same folder.
+
+Mini example: everything together
+Report section {.tabset}
+Plot
+plot(mtcars$wt, mtcars$mpg)
+Table
+head(mtcars)
+Model (code hidden)
+fit <- lm(mpg ~ wt + hp, data = mtcars)
+summary(fit)
+
+If you want, I can also give you:
+- a version that is **Quarto (.qmd)** instead of Rmd, or
+- an Rmd that includes a **custom CSS starter** (clean “Headwaters-ish” dark or light).

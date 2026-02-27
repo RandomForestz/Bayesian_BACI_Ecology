@@ -2,7 +2,7 @@
 
 #==============================================================================#
   
-  # Multinomial Logistic Exposure Data Prep
+  # 01 Multinomial Logistic Exposure Data Prep
 
 #==============================================================================#  
 
@@ -37,82 +37,12 @@ nest_data <- nest %>%
 #==============================================================================#
 # Adding in treatment information
 
-library(tibble)
+site_mgmt <- read.csv("data/management/predator_mgmt.csv")
 
-site_mgmt <- tribble(
-  ~Site,                  ~Year, ~exterior_fence, ~entry_fence, ~interior_fence, ~lights,
-  "Cottonwood Ranch",      2020,  0,               1,            0,               0,
-  "Cottonwood Ranch",      2021,  0,               1,            0,               0,
-  "Cottonwood Ranch",      2022,  0,               1,            0,               0,
-  "Cottonwood Ranch",      2023,  0,               1,            0,               0,
-  "Cottonwood Ranch",      2024,  0,               1,            0,               0,
-  "Cottonwood Ranch",      2025,  0,               1,            0,               0,
-  
-  "Dyer",                  2020,  0,               1,            0,               0,
-  "Dyer",                  2021,  0,               1,            0,               0,
-  "Dyer",                  2022,  0,               1,            0,               0,
-  "Dyer",                  2023,  0,               1,            0,               0,
-  "Dyer",                  2024,  0,               1,            0,               0,
-  "Dyer",                  2025,  0,               1,            0,               0,
-  
-  "Kearney Broadfoot South",2020,  0,               1,            1,               0,
-  "Kearney Broadfoot South",2021,  0,               1,            1,               1,
-  "Kearney Broadfoot South",2022,  0,               1,            1,               1,
-  "Kearney Broadfoot South",2023,  0,               1,            1,               1,
-  "Kearney Broadfoot South",2024,  0,               1,            1,               1,
-  "Kearney Broadfoot South",2025,  0,               1,            1,               1,
-  
-  "Leaman",                2020,  0,               1,            0,               0,
-  "Leaman",                2021,  0,               1,            0,               1,
-  "Leaman",                2022,  0,               1,            0,               1,
-  "Leaman",                2023,  0,               1,            0,               1,
-  "Leaman",                2024,  0,               1,            0,               1,
-  "Leaman",                2025,  0,               1,            0,               1,
-  
-  "OSG Lexington",         2020,  0,               1,            0,               0,
-  "OSG Lexington",         2021,  0,               1,            0,               0,
-  "OSG Lexington",         2022,  0,               1,            0,               0,
-  "OSG Lexington",         2023,  0,               1,            0,               0,
-  "OSG Lexington",         2024,  0,               1,            0,               0,
-  "OSG Lexington",         2025,  0,               1,            0,               0,
-  
-  "Newark East",            2020,  0,               1,            0,               0,
-  "Newark East",            2021,  0,               1,            0,               0,
-  "Newark East",            2022,  0,               1,            0,               0,
-  "Newark East",            2023,  0,               1,            0,               0,
-  "Newark East",            2024,  0,               1,            0,               0,
-  "Newark East",            2025,  0,               1,            0,               0,
-  
-  "Newark West",            2020,  1,               1,            0,               1,
-  "Newark West",            2021,  1,               1,            0,               1,
-  "Newark West",            2022,  1,               1,            0,               1,
-  "Newark West",            2023,  1,               1,            0,               1,
-  "Newark West",            2024,  1,               1,            0,               1,
-  "Newark West",            2025,  1,               1,            0,               0,
-  
-  "NPPD Lexington",         2020,  0,               1,            0,               0,
-  "NPPD Lexington",         2021,  0,               1,            0,               0,
-  "NPPD Lexington",         2022,  0,               1,            0,               0,
-  "NPPD Lexington",         2023,  0,               1,            0,               0,
-  "NPPD Lexington",         2024,  0,               1,            0,               0,
-  "NPPD Lexington",         2025,  0,               1,            0,               0,
-  
-  "Follmer",                2020,  0,               0,            0,               0,
-  "Follmer",                2021,  0,               0,            0,               0,
-  "Follmer",                2022,  0,               0,            0,               0,
-  "Follmer",                2023,  0,               0,            0,               0,
-  "Follmer",                2024,  0,               0,            0,               0,
-  "Follmer",                2025,  0,               1,            0,               0,
-  
-  "Blue Hole",              2020,  0,               1,            1,               1,
-  "Blue Hole",              2021,  0,               1,            0,               0,
-  "Blue Hole",              2022,  0,               0,            0,               0,
-  "Blue Hole",              2023,  0,               0,            0,               0,
-  "Blue Hole",              2024,  0,               0,            0,               0,
-  "Blue Hole",              2025,  0,               0,            0,               0
-)
+#==============================================================================#
+# Adding in climate
 
-
+clim <- read.csv("data/climate/prism.csv")
 
 #==============================================================================#
 # Nests
@@ -128,43 +58,43 @@ nest_fates <- nest_data %>%
         "Failed-Weather", "Failed-Flooded", "Failed-Unknown", "Unknown Outcome"
       ) ~ "chick",
       TRUE ~ "nest"                   # The rest are nest
-    )
+    ),
+    ever_chick = any(stage == "chick"),
   ) %>%
   dplyr::ungroup()
 
 # Create nest dataset (first observation to hatch or failure)
 nest_stage_data <- nest_fates %>%
-  dplyr::filter(stage == "nest") %>%                                # filtering to nests only
-  dplyr::arrange(Nest, Visit.Date) %>%                              # arranging by nest then visit date
-  dplyr::group_by(Nest) %>%                                         # grouping by nest
-  dplyr::mutate( 
-    exposure = c(0, as.numeric(diff(Visit.Date))),                  # calculating the exposure 
-    total_exposure = cumsum(exposure),                              # sum the exposure
-    is_last = dplyr::row_number() == dplyr::n(),                    
-
-    outcome = dplyr::case_when(                                     # Assigning the status of outcome
-      is_last & Nest.Status == "Successful Nest"  ~ "hatch",        
+  filter(stage == "nest") %>%
+  arrange(Nest, Visit.Date) %>%
+  group_by(Nest) %>%
+  mutate(
+    exposure = c(0, as.numeric(diff(Visit.Date))),
+    total_exposure = cumsum(exposure),
+    is_last = row_number() == n(),
+    Year = year(Visit.Date),
+    outcome = case_when(
+      
+      # FIRST: if this nest ever transitions to chick stage,
+      # then the last nest-stage interval = hatch
+      is_last & ever_chick ~ "hatch",
+      
+      # Otherwise evaluate real nest failures
       is_last & Nest.Status == "Failed-Abandoned" ~ "abandoned",
       is_last & Nest.Status == "Failed-Flooded"   ~ "flooded",
       is_last & Nest.Status == "Failed-Predation" ~ "predation",
       is_last & Nest.Status == "Failed-Weather"   ~ "weather",
       is_last & Nest.Status == "Failed-Unknown"   ~ "unknown",
       is_last & Nest.Status == "Unknown Outcome"  ~ "unknown",
-      TRUE ~ "censored"  # Active Nest falls through to censored
-    ),
-
-    # Apply species-specific rules for UNKNOWN outcomes only (last row only)
-    outcome = dplyr::case_when(
-      is_last & outcome == "unknown" & Species == "PIPL" & total_exposure > 27 ~ "hatch", # Rule for Plovers outcome
-      is_last & outcome == "unknown" & Species == "LETE" & total_exposure > 20 ~ "hatch", # Rule for Terns outcome
-      TRUE ~ outcome # If not meeting rule, keep outcome
+      
+      TRUE ~ "censored"
     )
   ) %>%
-  dplyr::ungroup()
+  ungroup()
 
 # Create one-hot encoding for nests + join site-year management
 nest_final <- nest_stage_data %>%
-  dplyr::mutate(
+  mutate(
     julian_day = lubridate::yday(Visit.Date),
     Year = lubridate::year(Visit.Date),
     s = ifelse(outcome == "hatch", 1, 0),
@@ -174,56 +104,65 @@ nest_final <- nest_stage_data %>%
     f = ifelse(outcome == "flooded", 1, 0),
     u = ifelse(outcome == "unknown", 1, 0)
   ) %>%
-  dplyr::left_join(site_mgmt, by = c("Site", "Year")) %>%
-  dplyr::mutate(
-    dplyr::across(
+  left_join(site_mgmt, by = c("Site", "Year")) %>%
+  mutate(
+    across(
       c(exterior_fence, entry_fence, interior_fence, lights),
       ~ tidyr::replace_na(.x, 0)
     )
   ) %>%
-  dplyr::select(
-    Nest, Species, Site, technique, Visit.Date, julian_day, exposure,
+  select(
+    Nest, Species, Site, Year, technique, Visit.Date, julian_day, exposure,
     exterior_fence, entry_fence, interior_fence, lights,
     s, p, a, w, f, u
-  )
-
+  ) %>%
+      left_join(clim, by = c("Site", "Year")) %>%
+      mutate(
+        across(
+          c(ppt, tmin, tmean, tmax, dew, vpdmin, vpdmax),
+          ~ tidyr::replace_na(.x, 0)
+        ))
+      
 
 #==============================================================================#
 # Chicks
 
 # Create chick dataset (hatch to fledge or failure)
 chick_data <- nest_fates %>%
-  dplyr::filter(stage == "chick") %>%              # Chick stage
-  dplyr::arrange(Nest, Visit.Date) %>%             # arrange by nest id then data
-  dplyr::group_by(Nest) %>%
-  dplyr::mutate(
-    exposure = c(0, as.numeric(diff(Visit.Date))), # Exposure
-    total_exposure = cumsum(exposure),             # Total exposure
-    is_last = dplyr::row_number() == dplyr::n(),
-
-    outcome = dplyr::case_when(
-      is_last & Chick.Status == "Fledged"          ~ "success", # Assigning the status of outcome
+  filter(stage == "chick") %>%
+  arrange(Nest, Visit.Date) %>%
+  group_by(Nest) %>%
+  mutate(
+    exposure = c(0, as.numeric(diff(Visit.Date))),
+    total_exposure = cumsum(exposure),
+    is_last = row_number() == n(),
+    Year = year(Visit.Date),
+    outcome = case_when(
+      
+      # Only evaluate event on last interval
+      is_last & Chick.Status == "Fledged"          ~ "success",
       is_last & Chick.Status == "Failed-Predation" ~ "predation",
       is_last & Chick.Status == "Failed-Abandoned" ~ "abandoned",
       is_last & Chick.Status == "Failed-Weather"   ~ "weather",
       is_last & Chick.Status == "Failed-Flooded"   ~ "flooded",
       is_last & Chick.Status == "Failed-Unknown"   ~ "unknown",
       is_last & Chick.Status == "Unknown Outcome"  ~ "unknown",
-      TRUE ~ "censored"  # Live Chicks falls through to censored
+      
+      TRUE ~ "censored"
     ),
-
-    # Apply species-specific rules for UNKNOWN outcomes only (last row only)
-    outcome = dplyr::case_when(
-      is_last & outcome == "unknown" & Species == "PIPL" & total_exposure > 27 ~ "success", # rule for Plovers
-      is_last & outcome == "unknown" & Species == "LETE" & total_exposure > 20 ~ "success", # Rule for Terns
-      TRUE ~ outcome # Keep the outcome if rule isnt met
+    
+    # Species-specific override for UNKNOWN on last interval only
+    outcome = case_when(
+      is_last & outcome == "unknown" & Species == "PIPL" & total_exposure > 27 ~ "success",
+      is_last & outcome == "unknown" & Species == "LETE" & total_exposure > 20 ~ "success",
+      TRUE ~ outcome
     )
   ) %>%
-  dplyr::ungroup()
+  ungroup()
 
 # Create one-hot encoding for chicks + join site-year management
 chick_final <- chick_data %>%
-  dplyr::mutate(
+  mutate(
     julian_day = lubridate::yday(Visit.Date),
     Year = lubridate::year(Visit.Date),
     s = ifelse(outcome == "success", 1, 0),
@@ -233,23 +172,27 @@ chick_final <- chick_data %>%
     f = ifelse(outcome == "flooded", 1, 0),
     u = ifelse(outcome == "unknown", 1, 0)
   ) %>%
-  dplyr::left_join(site_mgmt, by = c("Site", "Year")) %>%
-  dplyr::mutate(
-    dplyr::across(
+  left_join(site_mgmt, by = c("Site", "Year")) %>%
+  mutate(
+    across(
       c(exterior_fence, entry_fence, interior_fence, lights),
       ~ tidyr::replace_na(.x, 0)
     )
   ) %>%
-  dplyr::select(
-    Nest, Species, Site, technique, Visit.Date, julian_day, exposure,
+  select(
+    Nest, Species, Site, Year, technique, Visit.Date, julian_day, exposure,
     exterior_fence, entry_fence, interior_fence, lights,
     s, p, a, w, f, u
-  )
-
-
+  ) %>%
+  left_join(clim, by = c("Site", "Year")) %>%
+  mutate(
+    across(
+      c(ppt, tmin, tmean, tmax, dew, vpdmin, vpdmax),
+      ~ tidyr::replace_na(.x, 0)
+    ))
 
 
 # Save datasets
-write.csv(nest_final, "data/multinomial/nest_exposure_data.csv", row.names = FALSE)
-write.csv(chick_final, "data/multinomial/chick_exposure_data.csv", row.names = FALSE)
+write.csv(nest_final, "data/multinomial/01_nest_exposure_data.csv", row.names = FALSE)
+write.csv(chick_final, "data/multinomial/01_chick_exposure_data.csv", row.names = FALSE)
 
